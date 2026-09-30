@@ -10,7 +10,7 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red.svg)](https://streamlit.io/)
 
 **Hackathon Track:** `01 — AI Growth & Agentic Commerce | Razorpay AI Builders`  
-**Built by:** Karthickvel C ([GitHub](https://github.com/karthickvel) | [LinkedIn](https://www.linkedin.com/in/karthickvel/))
+**Built by:** Karthickvel C ([GitHub](https://github.com/karthickvel123) | [LinkedIn](https://www.linkedin.com/in/karthickvel-c-32b325425))
 
 ---
 
