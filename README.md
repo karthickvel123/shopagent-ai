@@ -6,10 +6,11 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com/)
 [![Google Gemini](https://img.shields.io/badge/Google%20GenAI-Gemini%203.8%20Flash-orange.svg)](https://ai.google.dev/)
 [![Razorpay](https://img.shields.io/badge/Razorpay-Payment%20Gateway-blueviolet.svg)](https://razorpay.com/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://shopagent-ai-zotuqes9sq7y98fbpjfznm.streamlit.app/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red.svg)](https://streamlit.io/)
 
 **Hackathon Track:** `01 — AI Growth & Agentic Commerce | Razorpay AI Builders`  
+**Live Demo:** [shopagent-ai-zotuqes9sq7y98fbpjfznm.streamlit.app](https://shopagent-ai-zotuqes9sq7y98fbpjfznm.streamlit.app/)  
 **Built by:** Karthickvel C ([GitHub](https://github.com/karthickvel123) | [LinkedIn](https://www.linkedin.com/in/karthickvel-c-32b325425))
 
 ---
