@@ -200,10 +200,15 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: `Buy ${productId}`, session_id: sessionId })
         });
-        const data = await res.json();
+        let data;
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = { response: "Unable to complete request right now. Please try again." };
+        }
         renderAgentResponse(data);
       } catch (err) {
-        msgBox.innerHTML += `<div class="bg-rose-950 border border-rose-800 rounded-xl p-3 text-rose-300">Error: ${err}</div>`;
+        msgBox.innerHTML += `<div class="bg-rose-950 border border-rose-800 rounded-xl p-3 text-rose-300">Request Error: ${err.message || err}</div>`;
       }
     }
 
@@ -237,12 +242,17 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: userText, session_id: sessionId })
         });
-        const data = await res.json();
+        let data;
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = { response: "Unable to complete request right now. Please try again." };
+        }
         document.getElementById(loaderId)?.remove();
         renderAgentResponse(data);
       } catch (err) {
         document.getElementById(loaderId)?.remove();
-        msgBox.innerHTML += `<div class="bg-rose-950 border border-rose-800 rounded-xl p-3 text-rose-300">Error: ${err}</div>`;
+        msgBox.innerHTML += `<div class="bg-rose-950 border border-rose-800 rounded-xl p-3 text-rose-300">Request Error: ${err.message || err}</div>`;
       }
     }
 

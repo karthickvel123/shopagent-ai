@@ -227,7 +227,7 @@ def _run_simulated_agent(user_message: str, db, session_id: str) -> Dict[str, An
             target = db.query(Product).filter(Product.id == id_match.group(1).upper()).first()
 
         if not target:
-            keywords = ["earbud", "charger", "speaker", "phone", "watch", "polo", "jeans",
+            keywords = ["sony", "wf-c500", "jbl", "earbud", "charger", "speaker", "phone", "watch", "polo", "jeans",
                         "sneaker", "jacket", "lamp", "mixer", "bottle", "clean code",
                         "alchemist", "atomic habits", "controller", "mouse", "keyboard"]
             for kw in keywords:
@@ -328,19 +328,28 @@ def _make_response(
     db, session_id: str, user_message: str, response_text: str,
     tools_used: List[str], tool_call_count: int
 ) -> Dict[str, Any]:
-    """Save agent session and return formatted response dict."""
+    """Save or update agent session and return formatted response dict."""
     interaction_id = f"sim_{uuid.uuid4().hex[:12]}"
-    agent_session = AgentSession(
-        session_id=session_id,
-        interaction_id=interaction_id,
-        user_query=user_message,
-        agent_response=response_text,
-        tools_used=tools_used,
-        tool_call_count=tool_call_count,
-        reasoning=f"Dispatched {len(tools_used)} tools: {', '.join(tools_used)}",
-        status="completed",
-    )
-    db.add(agent_session)
+    agent_session = db.query(AgentSession).filter(AgentSession.session_id == session_id).first()
+    if agent_session:
+        agent_session.user_query += f"\n---\n{user_message}"
+        agent_session.agent_response = response_text
+        agent_session.tools_used = list(set((agent_session.tools_used or []) + tools_used))
+        agent_session.tool_call_count = (agent_session.tool_call_count or 0) + tool_call_count
+        agent_session.reasoning = f"Dispatched {len(agent_session.tools_used)} tools"
+        agent_session.status = "completed"
+    else:
+        agent_session = AgentSession(
+            session_id=session_id,
+            interaction_id=interaction_id,
+            user_query=user_message,
+            agent_response=response_text,
+            tools_used=tools_used,
+            tool_call_count=tool_call_count,
+            reasoning=f"Dispatched {len(tools_used)} tools: {', '.join(tools_used)}",
+            status="completed",
+        )
+        db.add(agent_session)
     db.commit()
     return {
         "session_id": session_id,
@@ -356,16 +365,25 @@ def _save_session(
     db, session_id: str, interaction_id: str, user_message: str,
     response_text: str, tools_used: List[str], tool_call_count: int
 ) -> None:
-    """Persist a Gemini agent session to the database."""
-    agent_session = AgentSession(
-        session_id=session_id,
-        interaction_id=interaction_id,
-        user_query=user_message,
-        agent_response=response_text,
-        tools_used=tools_used,
-        tool_call_count=tool_call_count,
-        reasoning=f"Gemini dispatched {tool_call_count} tools: {', '.join(tools_used)}",
-        status="completed",
-    )
-    db.add(agent_session)
+    """Persist or update a Gemini agent session in the database."""
+    agent_session = db.query(AgentSession).filter(AgentSession.session_id == session_id).first()
+    if agent_session:
+        agent_session.user_query += f"\n---\n{user_message}"
+        agent_session.agent_response = response_text
+        agent_session.tools_used = list(set((agent_session.tools_used or []) + tools_used))
+        agent_session.tool_call_count = (agent_session.tool_call_count or 0) + tool_call_count
+        agent_session.interaction_id = interaction_id
+        agent_session.status = "completed"
+    else:
+        agent_session = AgentSession(
+            session_id=session_id,
+            interaction_id=interaction_id,
+            user_query=user_message,
+            agent_response=response_text,
+            tools_used=tools_used,
+            tool_call_count=tool_call_count,
+            reasoning=f"Gemini dispatched {tool_call_count} tools: {', '.join(tools_used)}",
+            status="completed",
+        )
+        db.add(agent_session)
     db.commit()

@@ -4,10 +4,10 @@ import os
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from backend.database import init_db, get_session_local
 from backend.catalog import seed_catalog
@@ -52,6 +52,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global exception on {request.url.path}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"response": f"Encountered internal processing issue: {str(exc)}", "error": str(exc), "tools_used": []}
+    )
 
 app.include_router(api_router)
 

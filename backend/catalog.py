@@ -1,5 +1,6 @@
 """Product catalog management with seed data for demo."""
 
+import re
 import logging
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
@@ -370,7 +371,7 @@ def search_products_db(
     """Search products by name, description, brand, or category."""
     q = db.query(Product).filter(Product.is_active == True)
     search_term = f"%{query_text.lower()}%"
-    q = q.filter(
+    q_exact = q.filter(
         or_(
             Product.name.ilike(search_term),
             Product.description.ilike(search_term),
@@ -380,14 +381,42 @@ def search_products_db(
     )
 
     if min_price is not None:
-        q = q.filter(Product.price >= min_price)
+        q_exact = q_exact.filter(Product.price >= min_price)
     if max_price is not None:
-        q = q.filter(Product.price <= max_price)
+        q_exact = q_exact.filter(Product.price <= max_price)
     if category:
-        q = q.filter(Product.category == category.lower())
+        q_exact = q_exact.filter(Product.category == category.lower())
 
-    products = q.order_by(Product.rating.desc()).limit(20).all()
-    return [_product_to_dict(p) for p in products]
+    results = q_exact.order_by(Product.rating.desc()).limit(20).all()
+    if results:
+        return [_product_to_dict(p) for p in results]
+
+    # Keyword splitting fallback
+    stop_words = {"with", "and", "under", "below", "less", "than", "for", "the", "good", "best", "in", "a", "an", "to", "me", "find", "i", "want", "need"}
+    words = [w for w in re.findall(r"\w+", query_text.lower()) if w not in stop_words and len(w) > 2]
+
+    if words:
+        conditions = []
+        for w in words:
+            term = f"%{w}%"
+            conditions.append(Product.name.ilike(term))
+            conditions.append(Product.description.ilike(term))
+            conditions.append(Product.brand.ilike(term))
+            conditions.append(Product.category.ilike(term))
+
+        q_words = q.filter(or_(*conditions))
+        if min_price is not None:
+            q_words = q_words.filter(Product.price >= min_price)
+        if max_price is not None:
+            q_words = q_words.filter(Product.price <= max_price)
+        if category:
+            q_words = q_words.filter(Product.category == category.lower())
+
+        results = q_words.order_by(Product.rating.desc()).limit(20).all()
+        if results:
+            return [_product_to_dict(p) for p in results]
+
+    return []
 
 
 def get_product_by_id(db: Session, product_id: str) -> Optional[Dict[str, Any]]:
