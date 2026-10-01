@@ -258,7 +258,7 @@ def fetch_optimization():
 with st.sidebar:
     st.image("https://cdn.razorpay.com/static/assets/logo/rzp.svg", width=160)
     st.title("ShopAgent AI")
-    st.caption("Track 01: AI Growth & Agentic Commerce")
+    st.caption("Autonomous Agentic Commerce Engine")
     st.markdown("---")
 
     st.subheader("⚡ Gateway Controls")

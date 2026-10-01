@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ShopAgent AI",
-    description="Autonomous AI Buyer Agent for Razorpay Merchants — Track 01: Agentic Commerce",
+    description="Autonomous AI Buyer Agent for Razorpay Merchants",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -77,7 +77,7 @@ def root():
     return {
         "service": "ShopAgent AI",
         "tagline": "Autonomous AI Buyer Agent for Razorpay Merchants",
-        "track": "Track 01: AI Growth & Agentic Commerce",
+        "engine": "Autonomous Agentic Commerce",
         "status": "running",
         "endpoints": {
             "api_docs": "/docs",
@@ -104,6 +104,6 @@ def health():
     return {
         "service": "ShopAgent AI",
         "status": "healthy",
-        "track": "Track 01: AI Growth & Agentic Commerce",
+        "engine": "Autonomous Agentic Commerce",
         "model": "gemini-3.8-flash"
     }

@@ -9,7 +9,7 @@
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://shopagent-ai-zotuqes9sq7y98fbpjfznm.streamlit.app/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Hackathon Track:** `01 — AI Growth & Agentic Commerce | Razorpay AI Builders`  
+**Project:** `Autonomous Agentic Commerce Engine for Razorpay Merchants`  
 **Live Demo:** [shopagent-ai-zotuqes9sq7y98fbpjfznm.streamlit.app](https://shopagent-ai-zotuqes9sq7y98fbpjfznm.streamlit.app/)  
 **Built by:** Karthickvel C ([GitHub](https://github.com/karthickvel123) | [LinkedIn](https://www.linkedin.com/in/karthickvel-c-32b325425))
 
@@ -284,8 +284,7 @@ shopagent-ai/
 ## 👥 Authors & Acknowledgments
 
 - **Built by:** Karthickvel C
-- **GitHub:** [@karthickvel](https://github.com/karthickvel)
-- **LinkedIn:** [linkedin.com/in/karthickvel](https://www.linkedin.com/in/karthickvel/)
-- **Hackathon:** [Razorpay AI Builders Hackathon 2026](https://razorpay.com)
-- **Track:** `01 — AI Growth & Agentic Commerce`
+- **GitHub:** [@karthickvel123](https://github.com/karthickvel123)
+- **LinkedIn:** [linkedin.com/in/karthickvel-c-32b325425](https://www.linkedin.com/in/karthickvel-c-32b325425)
+- **Ecosystem:** [Razorpay AI Builders](https://razorpay.com)
 - **License:** [MIT License](LICENSE)
