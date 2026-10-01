@@ -10,6 +10,157 @@ import pandas as pd
 
 API_URL = os.getenv("BACKEND_API_URL", "http://127.0.0.1:8000")
 
+# Local in-process fallback for standalone Streamlit Cloud
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+try:
+    from backend.database import init_db, get_session_local
+    from backend.catalog import seed_catalog, browse_catalog_db
+    from backend.models import Product, Order, Payment, AgentSession, AuditLog
+    from backend.optimizer import analyze_catalog_optimization
+    from backend.agent import run_agent
+    init_db()
+    _init_s = get_session_local()()
+    try:
+        seed_catalog(_init_s)
+    finally:
+        _init_s.close()
+    HAS_LOCAL_BACKEND = True
+except Exception:
+    HAS_LOCAL_BACKEND = False
+
+
+def fetch_stats():
+    try:
+        r = requests.get(f"{API_URL}/api/stats", timeout=3)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    if HAS_LOCAL_BACKEND:
+        try:
+            db = get_session_local()()
+            try:
+                products_cnt = db.query(Product).filter(Product.is_active == True).count()
+                orders_cnt = db.query(Order).count()
+                total_rev = sum(o.amount for o in db.query(Order).filter(Order.status == "paid").all())
+                sess_cnt = db.query(AgentSession).count()
+                tool_calls = sum(s.tool_call_count or 0 for s in db.query(AgentSession).all())
+                opt_res = analyze_catalog_optimization(db)
+                return {
+                    "total_products": products_cnt,
+                    "total_orders": orders_cnt,
+                    "total_revenue_paise": total_rev,
+                    "total_sessions": sess_cnt,
+                    "total_tool_calls": tool_calls,
+                    "avg_discoverability_score": opt_res.get("average_score", 0),
+                }
+            finally:
+                db.close()
+        except Exception:
+            pass
+    return {}
+
+
+def fetch_products():
+    try:
+        r = requests.get(f"{API_URL}/api/products", timeout=3)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    if HAS_LOCAL_BACKEND:
+        try:
+            db = get_session_local()()
+            try:
+                return browse_catalog_db(db, limit=50)
+            finally:
+                db.close()
+        except Exception:
+            pass
+    return []
+
+
+def fetch_orders():
+    try:
+        r = requests.get(f"{API_URL}/api/orders", timeout=3)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    if HAS_LOCAL_BACKEND:
+        try:
+            db = get_session_local()()
+            try:
+                orders = db.query(Order).order_by(Order.created_at.desc()).all()
+                return [
+                    {
+                        "id": o.id,
+                        "razorpay_order_id": o.razorpay_order_id,
+                        "product_id": o.product_id,
+                        "quantity": o.quantity,
+                        "amount": o.amount,
+                        "status": o.status,
+                        "customer_email": o.customer_email or "guest@voltstore.in",
+                        "created_at": str(o.created_at),
+                    }
+                    for o in orders
+                ]
+            finally:
+                db.close()
+        except Exception:
+            pass
+    return []
+
+
+def fetch_sessions():
+    try:
+        r = requests.get(f"{API_URL}/api/sessions", timeout=3)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    if HAS_LOCAL_BACKEND:
+        try:
+            db = get_session_local()()
+            try:
+                sessions = db.query(AgentSession).order_by(AgentSession.created_at.desc()).all()
+                return [
+                    {
+                        "session_id": s.session_id,
+                        "user_query": s.user_query,
+                        "agent_response": s.agent_response,
+                        "tools_used": s.tools_used or [],
+                        "tool_call_count": s.tool_call_count or 0,
+                    }
+                    for s in sessions
+                ]
+            finally:
+                db.close()
+        except Exception:
+            pass
+    return []
+
+
+def fetch_optimization():
+    try:
+        r = requests.get(f"{API_URL}/api/catalog/optimization", timeout=3)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    if HAS_LOCAL_BACKEND:
+        try:
+            db = get_session_local()()
+            try:
+                return analyze_catalog_optimization(db)
+            finally:
+                db.close()
+        except Exception:
+            pass
+    return {}
+
 st.set_page_config(
     page_title="ShopAgent AI — Telemetry Dashboard",
     page_icon="🛒",
@@ -224,6 +375,8 @@ with tab_chat:
 
         with st.chat_message("assistant"):
             with st.spinner("ShopAgent AI planning and dispatching tools..."):
+                resp_text = None
+                tools = []
                 try:
                     payload = {"message": user_prompt, "session_id": st.session_state.session_id}
                     r = requests.post(f"{API_URL}/api/chat", json=payload, timeout=20)
@@ -231,22 +384,32 @@ with tab_chat:
                         resp_data = r.json()
                         resp_text = resp_data.get("response", "Done.")
                         tools = resp_data.get("tools_used", [])
-                        st.markdown(resp_text)
-                        if tools:
-                            st.caption(f"🔧 **Tools Dispatched:** {', '.join(tools)}")
-                        st.session_state.chat_history.append({
-                            "role": "assistant",
-                            "content": resp_text,
-                            "tools": tools
-                        })
-                    else:
-                        err_msg = f"Backend error: {r.text}"
-                        st.error(err_msg)
-                        st.session_state.chat_history.append({"role": "assistant", "content": err_msg})
-                except Exception as ex:
-                    err_msg = f"Failed to reach backend at {API_URL}: {ex}"
-                    st.error(err_msg)
-                    st.session_state.chat_history.append({"role": "assistant", "content": err_msg})
+                except Exception:
+                    pass
+
+                if not resp_text and HAS_LOCAL_BACKEND:
+                    try:
+                        db = get_session_local()()
+                        try:
+                            agent_res = run_agent(user_prompt, db, session_id=st.session_state.session_id)
+                            resp_text = agent_res.get("response", "Done.")
+                            tools = agent_res.get("tools_used", [])
+                        finally:
+                            db.close()
+                    except Exception as ex:
+                        resp_text = f"Agent issue: {ex}"
+
+                if not resp_text:
+                    resp_text = "Unable to process request right now. Please try again."
+
+                st.markdown(resp_text)
+                if tools:
+                    st.caption(f"🔧 **Tools Dispatched:** {', '.join(tools)}")
+                st.session_state.chat_history.append({
+                    "role": "assistant",
+                    "content": resp_text,
+                    "tools": tools
+                })
 
 # ── Tab 2: Razorpay Order Stream ──
 with tab_orders:
