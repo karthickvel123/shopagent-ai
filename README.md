@@ -7,10 +7,12 @@
 [![Google Gemini](https://img.shields.io/badge/Google%20GenAI-Gemini%203.8%20Flash-orange.svg)](https://ai.google.dev/)
 [![Razorpay](https://img.shields.io/badge/Razorpay-Payment%20Gateway-blueviolet.svg)](https://razorpay.com/)
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://shopagent-ai-zotuqes9sq7y98fbpjfznm.streamlit.app/)
+[![YouTube Demo](https://img.shields.io/badge/YouTube-Working%20Demo-red.svg?logo=youtube)](https://youtu.be/omZyf4O3txc)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Project:** `Autonomous Agentic Commerce Engine for Razorpay Merchants`  
 **Live Demo:** [shopagent-ai-zotuqes9sq7y98fbpjfznm.streamlit.app](https://shopagent-ai-zotuqes9sq7y98fbpjfznm.streamlit.app/)  
+**Video Demo:** [youtu.be/omZyf4O3txc](https://youtu.be/omZyf4O3txc)  
 **Built by:** Karthickvel C ([GitHub](https://github.com/karthickvel123) | [LinkedIn](https://www.linkedin.com/in/karthickvel-c-32b325425))
 
 ---
