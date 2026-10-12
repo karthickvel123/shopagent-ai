@@ -309,6 +309,7 @@ def _product_to_dict(product: Product) -> Dict[str, Any]:
         "id": product.id,
         "name": product.name,
         "description": product.description,
+        "price": product.price,
         "price_paise": product.price,
         "price_inr": product.price / 100,
         "price_display": f"₹{product.price / 100:,.0f}",

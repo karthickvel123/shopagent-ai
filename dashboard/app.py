@@ -498,8 +498,18 @@ with tab_catalog:
     products = fetch_products()
     if products:
         p_df = pd.DataFrame(products)
-        p_df["price_inr"] = p_df["price"].apply(lambda p: f"₹{p/100:,.0f}")
-        st.dataframe(p_df[["id", "name", "category", "brand", "price_inr", "stock", "rating", "review_count"]], use_container_width=True)
+        if "price_inr" not in p_df.columns:
+            if "price" in p_df.columns:
+                p_df["price_inr"] = p_df["price"].apply(lambda p: f"₹{p/100:,.0f}")
+            elif "price_paise" in p_df.columns:
+                p_df["price_inr"] = p_df["price_paise"].apply(lambda p: f"₹{p/100:,.0f}")
+            else:
+                p_df["price_inr"] = "N/A"
+        elif p_df["price_inr"].dtype != object:
+            p_df["price_inr"] = p_df["price_inr"].apply(lambda p: f"₹{p:,.0f}")
+
+        cols_to_show = [c for c in ["id", "name", "category", "brand", "price_inr", "stock", "rating", "review_count"] if c in p_df.columns]
+        st.dataframe(p_df[cols_to_show], use_container_width=True)
     else:
         st.warning("Catalog is empty. Click 'Seed Demo Catalog' in the sidebar.")
 
