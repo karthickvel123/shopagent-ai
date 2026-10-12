@@ -416,8 +416,11 @@ with tab_orders:
     orders = fetch_orders()
     if orders:
         df_orders = pd.DataFrame(orders)
-        df_orders["amount_inr"] = df_orders["amount"].apply(lambda a: f"₹{a/100:,.0f}")
-        display_cols = ["id", "razorpay_order_id", "product_id", "quantity", "amount_inr", "status", "customer_email", "created_at"]
+        if "amount" in df_orders.columns:
+            df_orders["amount_inr"] = df_orders["amount"].apply(lambda a: f"₹{a/100:,.0f}")
+        else:
+            df_orders["amount_inr"] = "N/A"
+        display_cols = [c for c in ["id", "razorpay_order_id", "product_id", "quantity", "amount_inr", "status", "customer_email", "created_at"] if c in df_orders.columns]
         st.dataframe(df_orders[display_cols], use_container_width=True)
 
         col_left, col_right = st.columns(2)

@@ -71,8 +71,13 @@ def calculate_discoverability_score(product: Product) -> Dict[str, Any]:
     }
 
 
-def analyze_catalog_optimization(products: List[Product]) -> Dict[str, Any]:
-    """Aggregate discoverability metrics across an entire merchant catalog."""
+def analyze_catalog_optimization(products: Any) -> Dict[str, Any]:
+    """Aggregate discoverability metrics across an entire merchant catalog.
+    Supports either a list of Products or a database Session.
+    """
+    if hasattr(products, "query"):
+        products = products.query(Product).filter(Product.is_active == True).all()
+
     if not products:
         return {
             "average_score": 0.0,
