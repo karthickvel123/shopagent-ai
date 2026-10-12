@@ -214,44 +214,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-def fetch_stats():
-    try:
-        r = requests.get(f"{API_URL}/api/stats", timeout=3)
-        return r.json() if r.status_code == 200 else {}
-    except Exception:
-        return {}
 
-
-def fetch_products():
-    try:
-        r = requests.get(f"{API_URL}/api/products", timeout=3)
-        return r.json() if r.status_code == 200 else []
-    except Exception:
-        return []
-
-
-def fetch_orders():
-    try:
-        r = requests.get(f"{API_URL}/api/orders", timeout=3)
-        return r.json() if r.status_code == 200 else []
-    except Exception:
-        return []
-
-
-def fetch_sessions():
-    try:
-        r = requests.get(f"{API_URL}/api/sessions", timeout=3)
-        return r.json() if r.status_code == 200 else []
-    except Exception:
-        return []
-
-
-def fetch_optimization():
-    try:
-        r = requests.get(f"{API_URL}/api/catalog/optimization", timeout=3)
-        return r.json() if r.status_code == 200 else {}
-    except Exception:
-        return {}
 
 
 # ── Sidebar ──
@@ -264,24 +227,60 @@ with st.sidebar:
     st.subheader("⚡ Gateway Controls")
     auto_refresh = st.checkbox("Auto-refresh (10s)", value=False)
     if st.button("🌱 Seed Demo Catalog", use_container_width=True):
+        seeded = False
         try:
-            res = requests.post(f"{API_URL}/api/seed-catalog", timeout=5)
+            res = requests.post(f"{API_URL}/api/seed-catalog", timeout=3)
             if res.status_code == 200:
-                st.success("20 Products Seeded!")
-                time.sleep(1)
-                st.rerun()
-        except Exception as e:
-            st.error(f"Error: {e}")
+                seeded = True
+        except Exception:
+            pass
+
+        if not seeded and HAS_LOCAL_BACKEND:
+            try:
+                db = get_session_local()()
+                try:
+                    seed_catalog(db)
+                    seeded = True
+                finally:
+                    db.close()
+            except Exception as e:
+                st.error(f"Seeding error: {e}")
+
+        if seeded:
+            st.success("20 Products Seeded!")
+            time.sleep(1)
+            st.rerun()
 
     if st.button("🔄 Reset Environment", use_container_width=True):
+        reset_done = False
         try:
-            res = requests.post(f"{API_URL}/api/reset", timeout=5)
+            res = requests.post(f"{API_URL}/api/reset", timeout=3)
             if res.status_code == 200:
-                st.warning("Database reset and seeded!")
-                time.sleep(1)
-                st.rerun()
-        except Exception as e:
-            st.error(f"Error: {e}")
+                reset_done = True
+        except Exception:
+            pass
+
+        if not reset_done and HAS_LOCAL_BACKEND:
+            try:
+                db = get_session_local()()
+                try:
+                    db.query(AuditLog).delete()
+                    db.query(AgentSession).delete()
+                    db.query(Payment).delete()
+                    db.query(Order).delete()
+                    db.query(Product).delete()
+                    db.commit()
+                    seed_catalog(db)
+                    reset_done = True
+                finally:
+                    db.close()
+            except Exception as e:
+                st.error(f"Reset error: {e}")
+
+        if reset_done:
+            st.warning("Database reset and seeded!")
+            time.sleep(1)
+            st.rerun()
 
     st.markdown("---")
     st.caption("Engine: **Google Gemini 3.8 Flash**")
@@ -450,21 +449,46 @@ with tab_audit:
         selected_sess = st.selectbox("Select Session to inspect:", sess_ids)
 
         if selected_sess:
+            logs = None
             try:
                 audit_res = requests.get(f"{API_URL}/api/sessions/{selected_sess}/audit", timeout=3)
                 if audit_res.status_code == 200:
                     logs = audit_res.json()
-                    if logs:
-                        for l in logs:
-                            with st.expander(f"⚙️ [{l['action'].upper()}] {l.get('tool_name', 'N/A')} — {l.get('latency_ms', 0):.1f}ms"):
-                                st.write("**Input Parameters:**")
-                                st.json(l.get("input_data", {}))
-                                st.write("**Tool Output / Result:**")
-                                st.json(l.get("output_data", {}))
-                    else:
-                        st.info("No tool audit logs for this session.")
-            except Exception as e:
-                st.error(f"Failed to fetch audit logs: {e}")
+            except Exception:
+                pass
+
+            if logs is None and HAS_LOCAL_BACKEND:
+                try:
+                    db = get_session_local()()
+                    try:
+                        db_logs = db.query(AuditLog).filter(AuditLog.session_id == selected_sess).order_by(AuditLog.created_at.asc()).all()
+                        logs = [
+                            {
+                                "id": l.id,
+                                "session_id": l.session_id,
+                                "action": l.action,
+                                "tool_name": l.tool_name,
+                                "input_data": l.input_data,
+                                "output_data": l.output_data,
+                                "latency_ms": l.latency_ms,
+                                "created_at": l.created_at.isoformat() if l.created_at else None,
+                            }
+                            for l in db_logs
+                        ]
+                    finally:
+                        db.close()
+                except Exception:
+                    pass
+
+            if logs:
+                for l in logs:
+                    with st.expander(f"⚙️ [{l['action'].upper()}] {l.get('tool_name', 'N/A')} — {l.get('latency_ms', 0):.1f}ms"):
+                        st.write("**Input Parameters:**")
+                        st.json(l.get("input_data", {}))
+                        st.write("**Tool Output / Result:**")
+                        st.json(l.get("output_data", {}))
+            else:
+                st.info("No tool audit logs for this session.")
     else:
         st.info("No sessions recorded yet.")
 
